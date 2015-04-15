@@ -91,3 +91,5 @@ obj-$(CONFIG_TOUCHSCREEN_GT9XX)		+= gt9xx/
 
 obj-y	+= synaptics_driver_s3508.o
 obj-y	+= synaptics_redremote.o
+
+obj-$(CONFIG_TOUCHBOOST_CONTROL)	+= touchboost_switch.o
