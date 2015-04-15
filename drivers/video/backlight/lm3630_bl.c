@@ -51,6 +51,10 @@
 /* 2013-10-24Add end */
 #define INT_DEBOUNCE_MSEC	10
 
+#ifdef CONFIG_BACKLIGHT_EXT_CONTROL
+bool backlight_on = false;
+#endif
+
 #ifdef VENDOR_EDIT
 /*Mobile Phone Software Dept.Driver, 2014/03/10  Add for flicker in low backlight */
 static bool pwm_flag = true;
@@ -418,6 +422,26 @@ static void lm3630_backlight_unregister(struct lm3630_chip_data *pchip)
 	int ret;
 	struct lm3630_chip_data *pchip = lm3630_pchip;
 	pr_debug("%s: bl=%d\n", __func__,bl_level);
+	
+#ifdef CONFIG_BACKLIGHT_EXT_CONTROL
+	// if display is switched off
+	if (bl_level == 0) 
+	{
+		// write status to external var for further usage
+		backlight_on = false;
+
+		// Add external function calls here...
+	}
+	// if display is switched on
+	if (bl_level != 0 && pre_brightness == 0) 
+	{
+		// write status to external var for further usage
+		backlight_on = true;
+
+		// Add external function calls here...
+	}
+#endif
+	
 #ifdef VENDOR_EDIT
 
 /*Mobile Phone Software Dept.Driver, 2014/04/28  Add for add log for 14001 black screen */
