@@ -31,6 +31,9 @@
 #ifdef CONFIG_VENDOR_EDIT
 #include <linux/boot_mode.h>
 #endif //CONFIG_VENDOR_EDIT
+#ifdef CONFIG_FB_MSM_MDSS
+#include <linux/lcd_notify.h>
+#endif
 #define REG_CTRL	0x00
 #define REG_CONFIG	0x01
 #define REG_BRT_A	0x03
@@ -416,6 +419,22 @@ static void lm3630_backlight_unregister(struct lm3630_chip_data *pchip)
 	int ret;
 	struct lm3630_chip_data *pchip = lm3630_pchip;
 	pr_debug("%s: bl=%d\n", __func__,bl_level);
+
+#ifdef CONFIG_FB_MSM_MDSS
+	// LDC notifier
+	// if display is switched off
+	if (bl_level == 0) 
+	{
+		lcd_notifier_call_chain(LCD_EVENT_OFF_START, NULL);
+		lcd_notifier_call_chain(LCD_EVENT_OFF_END, NULL);
+	}
+	// if display is switched on
+	if (bl_level != 0 && pre_brightness == 0) 
+	{
+		lcd_notifier_call_chain(LCD_EVENT_ON_START, NULL);
+		lcd_notifier_call_chain(LCD_EVENT_ON_END, NULL);
+	}
+#endif
 	
 #ifdef VENDOR_EDIT
 
