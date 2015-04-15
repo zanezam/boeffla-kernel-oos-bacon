@@ -430,3 +430,4 @@ obj-$(CONFIG_PERFMAP) += perfmap.o
 obj-$(CONFIG_OPPO_DEVICE_IFNO)	+=  device_info.o
 #endif /* VENDOR_EDIT */
 
+obj-$(CONFIG_CHARGE_LEVEL) += charge_level.o
