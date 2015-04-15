@@ -88,3 +88,6 @@ obj-y	+= synaptics_dsx_i2c.o
 obj-y 	+= synaptics_dsx_fw_update.o
 obj-y	+= synaptics_dsx_rmi_dev.o
 obj-$(CONFIG_TOUCHSCREEN_GT9XX)		+= gt9xx/
+
+obj-$(CONFIG_TOUCHBOOST_CONTROL)	+= touchboost_switch.o
+
