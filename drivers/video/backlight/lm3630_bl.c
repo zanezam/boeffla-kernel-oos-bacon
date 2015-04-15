@@ -31,9 +31,6 @@
 #ifdef CONFIG_VENDOR_EDIT
 #include <linux/boot_mode.h>
 #endif //CONFIG_VENDOR_EDIT
-#ifdef CONFIG_BACKLIGHT_EXT_CONTROL
-#include <linux/backlight_ext_control.h>
-#endif
 #define REG_CTRL	0x00
 #define REG_CONFIG	0x01
 #define REG_BRT_A	0x03
@@ -52,10 +49,6 @@
 #define REG_REVISION 0x1F
 /* OPPO 2013-10-24 yxq Add end */
 #define INT_DEBOUNCE_MSEC	10
-
-#ifdef CONFIG_BACKLIGHT_EXT_CONTROL
-bool backlight_on = false;
-#endif
 
 #ifdef VENDOR_EDIT
 /* Xiaori.Yuan@Mobile Phone Software Dept.Driver, 2014/03/10  Add for flicker in low backlight */
@@ -423,45 +416,6 @@ static void lm3630_backlight_unregister(struct lm3630_chip_data *pchip)
 	int ret;
 	struct lm3630_chip_data *pchip = lm3630_pchip;
 	pr_debug("%s: bl=%d\n", __func__,bl_level);
-	
-#ifdef CONFIG_BACKLIGHT_EXT_CONTROL
-	// if display is switched off
-	if (bl_level == 0) 
-	{
-		// write status to external var for further usage
-		backlight_on = false;
-
-		// Add external function calls here...
-
-#ifdef CONFIG_DYNAMIC_FSYNC
-		// if dynamic fsync is defined call external suspend function
-		dyn_fsync_suspend();
-#endif
-
-#ifdef CONFIG_CPU_FREQ_GOV_ZZMOOVE
-		// if zzmoove governor is defined call external suspend function
-		zzmoove_suspend();
-#endif
-
-	}
-
-	// if display is switched on
-	if (bl_level != 0 && pre_brightness == 0) 
-	{
-		// write status to external var for further usage
-		backlight_on = true;
-
-		// Add external function calls here...
-#ifdef CONFIG_DYNAMIC_FSYNC
-		// if dynamic fsync is defined call external resume function
-		dyn_fsync_resume();
-#endif
-#ifdef CONFIG_CPU_FREQ_GOV_ZZMOOVE
-		// if zzmoove governor is defined call external resume function
-		zzmoove_resume();
-#endif
-	}
-#endif
 	
 #ifdef VENDOR_EDIT
 
