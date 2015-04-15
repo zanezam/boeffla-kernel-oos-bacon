@@ -467,3 +467,9 @@ config SND_SOC_MSM_HDMI_CODEC_RX
 config SND_SOC_TAS2552
 	tristate
 #endif /*VENDOR_EDIT*/
+
+config BOEFFLA_SOUND
+	bool "Boeffla Sound engine"
+	default y
+	help
+		Boeffla sound engine by andip71 (aka Lord Boeffla)

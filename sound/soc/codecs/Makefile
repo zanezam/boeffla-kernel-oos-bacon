@@ -228,3 +228,5 @@ obj-$(CONFIG_SND_SOC_TPA6130A2)	+= snd-soc-tpa6130a2.o
 #xiaojun.lv@PhoneDpt.AudioDrv, 2014/06/13, add for TI smartPA TAS2552
 obj-$(CONFIG_SND_SOC_TAS2552)	+= snd-soc-tas2552.o
 #endif /*VENDOR_EDIT*/
+
+obj-$(CONFIG_BOEFFLA_SOUND) += boeffla_sound.o
