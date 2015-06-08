@@ -1,0 +1,39 @@
+From 95c811aa8caa2625250f05f61b6a13ca7363908f Mon Sep 17 00:00:00 2001
+From: andip71 <andreasp@gmx.de>
+Date: Tue, 9 Feb 2016 12:14:12 +0100
+Subject: [PATCH] 3
+
+---
+ init.rc | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/init.rc b/init.rc
+index 64c7fc8..310690e 100755
+--- a/init.rc
++++ b/init.rc
+@@ -340,9 +340,9 @@ on boot
+     write /proc/sys/vm/overcommit_memory 1
+     write /proc/sys/vm/min_free_order_shift 4
+     chown root system /sys/module/lowmemorykiller/parameters/adj
+-    chmod 0220 /sys/module/lowmemorykiller/parameters/adj
++    chmod 0660 /sys/module/lowmemorykiller/parameters/adj
+     chown root system /sys/module/lowmemorykiller/parameters/minfree
+-    chmod 0220 /sys/module/lowmemorykiller/parameters/minfree
++    chmod 0660 /sys/module/lowmemorykiller/parameters/minfree
+ 
+     # Tweak background writeout
+     write /proc/sys/vm/dirty_expire_centisecs 200
+@@ -681,3 +681,10 @@ on property:ro.prj_name=14001
+ on property:ro.prj_name=15055
+      setprop persist.radio.multisim.config dsds
+ #endif
++
++# Call Boeffla-Kernel init script
++service boeffla-init /sbin/boeffla-init.sh
++    class main
++    user root
++    group root
++    oneshot
+-- 
+1.9.1
+
