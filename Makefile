@@ -1178,10 +1178,10 @@ CLEAN_FILES +=	vmlinux System.map \
                 .tmp_kallsyms* .tmp_version .tmp_vmlinux* .tmp_System.map
 
 # Directories & files removed with 'make mrproper'
-MRPROPER_DIRS  += include/config usr/include include/generated          \
+MRPROPER_DIRS  += include/config usr/include include/generated             \
                   arch/*/include/generated
-MRPROPER_FILES += .config .config.old .version .old_version             \
-                  include/linux/version.h                               \
+MRPROPER_FILES += .config .config.old .version .old_version                \
+                  include/linux/version.h arch/arm/mach-msm/smd_rpc_sym.c  \
 		  Module.symvers tags TAGS cscope* GPATH GTAGS GRTAGS GSYMS
 
 # clean - Delete most, but leave enough to build external modules
