@@ -104,7 +104,7 @@ static inline int msm_jpeg_q_in_buf(struct msm_jpeg_q *q_p,
 	return 0;
 }
 
-inline int msm_jpeg_q_wait(struct msm_jpeg_q *q_p)
+static inline int msm_jpeg_q_wait(struct msm_jpeg_q *q_p)
 {
 	long tm = MAX_SCHEDULE_TIMEOUT; /* 500ms */
 	int rc;
@@ -129,14 +129,14 @@ inline int msm_jpeg_q_wait(struct msm_jpeg_q *q_p)
 	return rc;
 }
 
-inline int msm_jpeg_q_wakeup(struct msm_jpeg_q *q_p)
+static inline int msm_jpeg_q_wakeup(struct msm_jpeg_q *q_p)
 {
 	JPEG_DBG("%s:%d] %s\n", __func__, __LINE__, q_p->name);
 	wake_up(&q_p->wait);
 	return 0;
 }
 
-inline int msm_jpeg_q_unblock(struct msm_jpeg_q *q_p)
+static inline int msm_jpeg_q_unblock(struct msm_jpeg_q *q_p)
 {
 	JPEG_DBG("%s:%d] %s\n", __func__, __LINE__, q_p->name);
 	q_p->unblck = 1;
