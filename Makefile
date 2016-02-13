@@ -377,6 +377,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security -Wno-bool-compare \
 		   -Wno-sizeof-array-argument -Wno-logical-not-parentheses \
+		   -Wno-shift-overflow -Wno-tautological-compare \
+		   -Wno-unused-const-variable \
 		   -fno-delete-null-pointer-checks \
 		   -fno-diagnostics-show-caret \
 		    $(KERNELFLAGS)
