@@ -7927,7 +7927,7 @@ static int qpnp_check_battery_temp(struct qpnp_chg_chip *chip)
 /* yangfangbiao@oneplus.cn, 2015/01/06  Modify end for  sync with KK charge standard  */
 #define BATT_RECHARGING_VOLTAGE__NORMAL 		4220 * 1000
 #define BATT_RECHARGING_VOLTAGE__WARM  		4000 * 1000
-#define BATT_RECHARGING_CHECK_COUNT				5
+#define BATT_RECHARGING_CHECK_COUNT				50
 
 static void qpnp_check_recharging(struct qpnp_chg_chip *chip)
 {
