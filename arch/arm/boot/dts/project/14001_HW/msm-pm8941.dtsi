@@ -214,7 +214,7 @@
 		status = "disabled";
 //#ifdef CONFIG_VENDOR_EDIT
 		//add by xcb
-		oem,use-external-charger;
+		// oem,use-external-charger;
 //#endif CONFIG_VENDOR_EDIT
 
 		/*vendor_edit wangjc change*/
@@ -889,7 +889,7 @@
 		qcom,adc-bit-resolution = <15>;
 		qcom,adc-vdd-reference = <1800>;
 		qcom,adc_tm-vadc = <&pm8941_vadc>;
-		oem,use-external-charger;
+		// oem,use-external-charger;
 
 		/* Channel Node */
 		chan@b9 {
