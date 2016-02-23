@@ -132,10 +132,10 @@ static int UpVee_gesture = 0; //"V"
 //static int DownVee_gesture = 0; //"^"
 static int DouTap_gesture = 0; //"double tap"
 
-//static int Left2RightSwip_gesture=0;//"(-->)"
-//static int Right2LeftSwip_gesture=0;//"(<--)"
-//static int Up2DownSwip_gesture =0;//"up to down |"
-//static int Down2UpSwip_gesture =0;//"down to up |"
+static int Left2RightSwip_gesture=0;//"(-->)"
+static int Right2LeftSwip_gesture=0;//"(<--)"
+static int Up2DownSwip_gesture =0;//"up to down |"
+static int Down2UpSwip_gesture =0;//"down to up |"
 
 //static int Wgestrue_gesture =0;//"(W)"
 //static int Mgestrue_gesture =0;//"(M)"
@@ -1549,6 +1549,33 @@ static int synaptics_rmi4_proc_write( struct file *filp, const char __user *buff
 	return len;
 }
 
+static int synaptics_rmi4_proc_sweep_wake_read(char *page, char **start, off_t off,
+		int count, int *eof, void *data)
+{
+	return sprintf(page, "%d\n", Left2RightSwip_gesture);
+}
+
+static int synaptics_rmi4_proc_sweep_wake_write(struct file *filp, const char __user *buff,
+		unsigned long len, void *data)
+{
+	char buf[2];
+
+	if (len > 2)
+		return 0;
+
+	if (copy_from_user(buf, buff, len)) {
+		print_ts(TS_DEBUG, KERN_ERR "Read proc input error.\n");
+		return -EFAULT;
+	}
+
+	Left2RightSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
+	Right2LeftSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
+	Up2DownSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
+	Down2UpSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
+
+	return len;
+}
+
 //smartcover proc read function
 static int synaptics_rmi4_proc_smartcover_read(char *page, char **start, off_t off,
 		int count, int *eof, void *data) {
@@ -1760,6 +1787,13 @@ static int synaptics_rmi4_init_touchpanel_proc(void)
 		proc_entry->write_proc = synaptics_rmi4_proc_glove_write;
 		proc_entry->read_proc = synaptics_rmi4_proc_glove_read;
 	}
+	
+	// sweep wake
+	proc_entry = create_proc_entry("sweep_wake_enable", 0664, procdir);
+	if (proc_entry) {
+		proc_entry->write_proc = synaptics_rmi4_proc_sweep_wake_write;
+		proc_entry->read_proc = synaptics_rmi4_proc_sweep_wake_read;
+	}	
 
 	proc_entry = create_proc_entry("gesture_enable", 0666, procdir);
 	if (proc_entry) {
@@ -2674,7 +2708,15 @@ static unsigned char synaptics_rmi4_update_gesture2(unsigned char *gesture,unsig
                                                         gesturemode == Wgestrue ? "(W)" : "unknown");
 if((gesturemode == DouTap && DouTap_gesture)||(gesturemode == RightVee && RightVee_gesture)\
         ||(gesturemode == LeftVee && LeftVee_gesture)||(gesturemode == UpVee && UpVee_gesture)\
+        ||(gesturemode == Left2RightSwip && Left2RightSwip_gesture)||(gesturemode == Right2LeftSwip && Right2LeftSwip_gesture)\
+        ||(gesturemode == Up2DownSwip && Up2DownSwip_gesture)||(gesturemode == Down2UpSwip && Down2UpSwip_gesture)\
         ||(gesturemode == Circle && Circle_gesture)||(gesturemode == DouSwip && DouSwip_gesture)){
+
+		// simulate double tap gesture in case we detected a horizontal or vertical swipe
+		if ((gesturemode == Left2RightSwip) || (gesturemode == Right2LeftSwip) ||
+			(gesturemode == Up2DownSwip) || (gesturemode == Down2UpSwip))
+			gesturemode = DouTap;
+
 		input_report_key(syna_rmi4_data->input_dev, keycode, 1);
 		input_sync(syna_rmi4_data->input_dev);
 		input_report_key(syna_rmi4_data->input_dev, keycode, 0);
