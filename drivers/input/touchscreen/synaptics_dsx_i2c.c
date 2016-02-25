@@ -124,6 +124,8 @@
 #define BIT6 (0x1 << 6)
 #define BIT7 (0x1 << 7)
 
+#define IMPLEMENTED_FUNCTIONS	(BIT0 | BIT1)
+
 static int LeftVee_gesture = 0; //">"
  static int RightVee_gesture = 0; //"<"
 static int DouSwip_gesture = 0; // "||"
@@ -140,6 +142,7 @@ static int Down2UpSwip_gesture =0;//"down to up |"
 //static int Wgestrue_gesture =0;//"(W)"
 //static int Mgestrue_gesture =0;//"(M)"
 
+int DisableDouTapVibration = 0;
 
 //shankai @ bsp  add for tp type compatibility.
   char *tp_firmware_strings[TP_TYPE_MAX][LCD_TYPE_MAX] = {
@@ -1576,10 +1579,17 @@ static int synaptics_rmi4_proc_write( struct file *filp, const char __user *buff
 	return len;
 }
 
+static int synaptics_rmi4_proc_sweep_wake_implemented_read(char *page, char **start, off_t off,
+		int count, int *eof, void *data)
+{
+	return sprintf(page, "%d\n", IMPLEMENTED_FUNCTIONS);
+}
+
+
 static int synaptics_rmi4_proc_sweep_wake_read(char *page, char **start, off_t off,
 		int count, int *eof, void *data)
 {
-	return sprintf(page, "%d\n", Left2RightSwip_gesture);
+	return sprintf(page, "%d\n", Left2RightSwip_gesture + (DisableDouTapVibration * BIT1));
 }
 
 static int synaptics_rmi4_proc_sweep_wake_write(struct file *filp, const char __user *buff,
@@ -1601,6 +1611,8 @@ static int synaptics_rmi4_proc_sweep_wake_write(struct file *filp, const char __
 	Right2LeftSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
 	Up2DownSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
 	Down2UpSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
+
+	DisableDouTapVibration = (buf[0] & BIT1) ? 1 : 0;
 
 	enable = (UpVee_gesture | DouSwip_gesture | LeftVee_gesture |
 				RightVee_gesture | Circle_gesture | DouTap_gesture |
@@ -1839,6 +1851,11 @@ static int synaptics_rmi4_init_touchpanel_proc(void)
 		proc_entry->write_proc = synaptics_rmi4_proc_sweep_wake_write;
 		proc_entry->read_proc = synaptics_rmi4_proc_sweep_wake_read;
 	}	
+
+	proc_entry = create_proc_entry("sweep_wake_enable_implemented", 0664, procdir);
+	if (proc_entry) {
+		proc_entry->read_proc = synaptics_rmi4_proc_sweep_wake_implemented_read;
+	}
 
 	proc_entry = create_proc_entry("gesture_enable", 0666, procdir);
 	if (proc_entry) {
@@ -2751,7 +2768,7 @@ static unsigned char synaptics_rmi4_update_gesture2(unsigned char *gesture,unsig
                                                         gesturemode == Down2UpSwip ? "down to up |" :
                                                         gesturemode == Mgestrue ? "(M)" :
                                                         gesturemode == Wgestrue ? "(W)" : "unknown");
-if((gesturemode == DouTap && DouTap_gesture)||(gesturemode == RightVee && RightVee_gesture)\
+	if((gesturemode == DouTap && DouTap_gesture && !DisableDouTapVibration)||(gesturemode == RightVee && RightVee_gesture)\
         ||(gesturemode == LeftVee && LeftVee_gesture)||(gesturemode == UpVee && UpVee_gesture)\
         ||(gesturemode == Circle && Circle_gesture)||(gesturemode == DouSwip && DouSwip_gesture)){
 		input_report_key(syna_rmi4_data->input_dev, keycode, 1);
@@ -2759,7 +2776,8 @@ if((gesturemode == DouTap && DouTap_gesture)||(gesturemode == RightVee && RightV
 		input_report_key(syna_rmi4_data->input_dev, keycode, 0);
 		input_sync(syna_rmi4_data->input_dev);
     }
-    else if ((gesturemode == Left2RightSwip && Left2RightSwip_gesture)||(gesturemode == Right2LeftSwip && Right2LeftSwip_gesture)\
+    else if ((gesturemode == DouTap && DouTap_gesture && DisableDouTapVibration)
+			||(gesturemode == Left2RightSwip && Left2RightSwip_gesture)||(gesturemode == Right2LeftSwip && Right2LeftSwip_gesture)\
 			||(gesturemode == Up2DownSwip && Up2DownSwip_gesture)||(gesturemode == Down2UpSwip && Down2UpSwip_gesture))
     {
 		// press powerkey
