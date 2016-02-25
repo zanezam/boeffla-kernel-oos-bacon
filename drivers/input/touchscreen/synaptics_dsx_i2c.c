@@ -527,6 +527,28 @@ static struct device_attribute attrs[] = {
 
 };
 
+static struct input_dev * boeffla_syn_pwrdev;
+static DEFINE_MUTEX(boeffla_syn_pwrkeyworklock);
+
+static void boeffla_syn_presspwr(struct work_struct * boeffla_syn_presspwr_work)
+{
+	if (!mutex_trylock(&boeffla_syn_pwrkeyworklock))
+		return;
+
+	input_event(boeffla_syn_pwrdev, EV_KEY, KEY_POWER, 1);
+	input_event(boeffla_syn_pwrdev, EV_SYN, 0, 0);
+	msleep(60);
+
+	input_event(boeffla_syn_pwrdev, EV_KEY, KEY_POWER, 0);
+	input_event(boeffla_syn_pwrdev, EV_SYN, 0, 0);
+	msleep(60);
+
+    mutex_unlock(&boeffla_syn_pwrkeyworklock);
+	return;
+}
+static DECLARE_WORK(boeffla_syn_presspwr_work, boeffla_syn_presspwr);
+
+
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static ssize_t synaptics_rmi4_full_pm_cycle_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
@@ -1533,7 +1555,12 @@ static int synaptics_rmi4_proc_write( struct file *filp, const char __user *buff
 	DouTap_gesture = (buf[0] & BIT7)?1:0; //double tap
 	//shankai@bsp ,  fixed the bug can not disable gesture when turned off
 	// gesture in ui   .2015.8.3
-	enable =(buff[0]==0)?0:1 ;
+	//enable =(buff[0]==0)?0:1 ;
+
+	enable = (UpVee_gesture | DouSwip_gesture | LeftVee_gesture |
+				RightVee_gesture | Circle_gesture | DouTap_gesture |
+				Left2RightSwip_gesture | Right2LeftSwip_gesture | Up2DownSwip_gesture | Down2UpSwip_gesture);
+	enable = (enable == 0) ? 0 : 1;
 
 	bak = syna_rmi4_data->gesture_enable ;
 	syna_rmi4_data->gesture_enable &= 0x00 ;
@@ -1559,6 +1586,8 @@ static int synaptics_rmi4_proc_sweep_wake_write(struct file *filp, const char __
 		unsigned long len, void *data)
 {
 	char buf[2];
+	unsigned char bak;
+	unsigned int enable;
 
 	if (len > 2)
 		return 0;
@@ -1572,6 +1601,22 @@ static int synaptics_rmi4_proc_sweep_wake_write(struct file *filp, const char __
 	Right2LeftSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
 	Up2DownSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
 	Down2UpSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
+
+	enable = (UpVee_gesture | DouSwip_gesture | LeftVee_gesture |
+				RightVee_gesture | Circle_gesture | DouTap_gesture |
+				Left2RightSwip_gesture | Right2LeftSwip_gesture | Up2DownSwip_gesture | Down2UpSwip_gesture);
+	enable = (enable == 0) ? 0 : 1;
+
+	bak = syna_rmi4_data->gesture_enable ;
+	syna_rmi4_data->gesture_enable &= 0x00 ;
+	if(enable)
+		syna_rmi4_data->gesture_enable |= 0x6b ;
+	if(bak == syna_rmi4_data->gesture_enable)
+		return len ;
+
+	if(!(syna_use_gesture && syna_rmi4_data->gesture))
+		syna_use_gesture = (syna_rmi4_data->gesture_enable&0xff)?1:0 ;
+	print_ts(TS_DEBUG, KERN_ERR "enable=0x%x\n", syna_rmi4_data->gesture_enable);
 
 	return len;
 }
@@ -2708,20 +2753,18 @@ static unsigned char synaptics_rmi4_update_gesture2(unsigned char *gesture,unsig
                                                         gesturemode == Wgestrue ? "(W)" : "unknown");
 if((gesturemode == DouTap && DouTap_gesture)||(gesturemode == RightVee && RightVee_gesture)\
         ||(gesturemode == LeftVee && LeftVee_gesture)||(gesturemode == UpVee && UpVee_gesture)\
-        ||(gesturemode == Left2RightSwip && Left2RightSwip_gesture)||(gesturemode == Right2LeftSwip && Right2LeftSwip_gesture)\
-        ||(gesturemode == Up2DownSwip && Up2DownSwip_gesture)||(gesturemode == Down2UpSwip && Down2UpSwip_gesture)\
         ||(gesturemode == Circle && Circle_gesture)||(gesturemode == DouSwip && DouSwip_gesture)){
-
-		// simulate double tap gesture in case we detected a horizontal or vertical swipe
-		if ((gesturemode == Left2RightSwip) || (gesturemode == Right2LeftSwip) ||
-			(gesturemode == Up2DownSwip) || (gesturemode == Down2UpSwip))
-			gesturemode = DouTap;
-
 		input_report_key(syna_rmi4_data->input_dev, keycode, 1);
 		input_sync(syna_rmi4_data->input_dev);
 		input_report_key(syna_rmi4_data->input_dev, keycode, 0);
 		input_sync(syna_rmi4_data->input_dev);
     }
+    else if ((gesturemode == Left2RightSwip && Left2RightSwip_gesture)||(gesturemode == Right2LeftSwip && Right2LeftSwip_gesture)\
+			||(gesturemode == Up2DownSwip && Up2DownSwip_gesture)||(gesturemode == Down2UpSwip && Down2UpSwip_gesture))
+    {
+		// press powerkey
+		schedule_work(&boeffla_syn_presspwr_work);
+	}
 
 	if(gesturemode != UnkownGestrue) {
 		syna_rmi4_data->gesturemode = gesturemode ;
@@ -5456,6 +5499,26 @@ static struct i2c_driver synaptics_rmi4_driver = {
  */
 static int __init synaptics_rmi4_init(void)
 {
+	int rc = 0;
+
+	// allocate and register input device for sending power key events
+	boeffla_syn_pwrdev = input_allocate_device();
+	if (!boeffla_syn_pwrdev)
+	{
+		pr_err("Can't allocate suspend autotest power button\n");
+		return -EFAULT;
+	}
+
+	input_set_capability(boeffla_syn_pwrdev, EV_KEY, KEY_POWER);
+	boeffla_syn_pwrdev->name = "boeffla_syn_pwrkey";
+	boeffla_syn_pwrdev->phys = "boeffla_syn_pwrkey/input0";
+	rc = input_register_device(boeffla_syn_pwrdev);
+	if (rc)
+	{
+		pr_err("%s: input_register_device err=%d\n", __func__, rc);
+		return -EFAULT;
+	}
+
 	return i2c_add_driver(&synaptics_rmi4_driver);
 }
 
