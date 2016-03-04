@@ -142,7 +142,7 @@ static int Down2UpSwip_gesture =0;//"down to up |"
 //static int Wgestrue_gesture =0;//"(W)"
 //static int Mgestrue_gesture =0;//"(M)"
 
-int DisableDouTapVibration = 0;
+int DisableGestureHaptic = 0;
 
 //shankai @ bsp  add for tp type compatibility.
   char *tp_firmware_strings[TP_TYPE_MAX][LCD_TYPE_MAX] = {
@@ -532,6 +532,7 @@ static struct device_attribute attrs[] = {
 
 static struct input_dev * boeffla_syn_pwrdev;
 static DEFINE_MUTEX(boeffla_syn_pwrkeyworklock);
+void qpnp_hap_ignore_next_request(void);
 
 static void boeffla_syn_presspwr(struct work_struct * boeffla_syn_presspwr_work)
 {
@@ -1589,7 +1590,7 @@ static int synaptics_rmi4_proc_sweep_wake_implemented_read(char *page, char **st
 static int synaptics_rmi4_proc_sweep_wake_read(char *page, char **start, off_t off,
 		int count, int *eof, void *data)
 {
-	return sprintf(page, "%d\n", Left2RightSwip_gesture + (DisableDouTapVibration * BIT1));
+	return sprintf(page, "%d\n", Left2RightSwip_gesture + (DisableGestureHaptic * BIT1));
 }
 
 static int synaptics_rmi4_proc_sweep_wake_write(struct file *filp, const char __user *buff,
@@ -1612,7 +1613,7 @@ static int synaptics_rmi4_proc_sweep_wake_write(struct file *filp, const char __
 	Up2DownSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
 	Down2UpSwip_gesture = (buf[0] & BIT0) ? 1 : 0;
 
-	DisableDouTapVibration = (buf[0] & BIT1) ? 1 : 0;
+	DisableGestureHaptic = (buf[0] & BIT1) ? 1 : 0;
 
 	enable = (UpVee_gesture | DouSwip_gesture | LeftVee_gesture |
 				RightVee_gesture | Circle_gesture | DouTap_gesture |
@@ -2768,20 +2769,38 @@ static unsigned char synaptics_rmi4_update_gesture2(unsigned char *gesture,unsig
                                                         gesturemode == Down2UpSwip ? "down to up |" :
                                                         gesturemode == Mgestrue ? "(M)" :
                                                         gesturemode == Wgestrue ? "(W)" : "unknown");
-	if((gesturemode == DouTap && DouTap_gesture && !DisableDouTapVibration)||(gesturemode == RightVee && RightVee_gesture)\
+	if((gesturemode == DouTap && DouTap_gesture)||(gesturemode == RightVee && RightVee_gesture)\
         ||(gesturemode == LeftVee && LeftVee_gesture)||(gesturemode == UpVee && UpVee_gesture)\
         ||(gesturemode == Circle && Circle_gesture)||(gesturemode == DouSwip && DouSwip_gesture)){
+
+		// check if haptic feedback for gesture should be suppressed
+		if (DisableGestureHaptic)
+			qpnp_hap_ignore_next_request();
+
 		input_report_key(syna_rmi4_data->input_dev, keycode, 1);
 		input_sync(syna_rmi4_data->input_dev);
 		input_report_key(syna_rmi4_data->input_dev, keycode, 0);
 		input_sync(syna_rmi4_data->input_dev);
     }
-    else if ((gesturemode == DouTap && DouTap_gesture && DisableDouTapVibration)
-			||(gesturemode == Left2RightSwip && Left2RightSwip_gesture)||(gesturemode == Right2LeftSwip && Right2LeftSwip_gesture)\
+    else if ((gesturemode == Left2RightSwip && Left2RightSwip_gesture)||(gesturemode == Right2LeftSwip && Right2LeftSwip_gesture)\
 			||(gesturemode == Up2DownSwip && Up2DownSwip_gesture)||(gesturemode == Down2UpSwip && Down2UpSwip_gesture))
     {
-		// press powerkey
-		schedule_work(&boeffla_syn_presspwr_work);
+		// if user has double tap gesture enabled, we can still deliver haptic feedback also for swipe gestures (incl. proximity check)
+		// hence we check if this is the case and if user wants to receive haptic feedback
+		// if not, send power key
+		if (DouTap_gesture && !DisableGestureHaptic)
+		{
+			gesturemode = DouTap;
+			input_report_key(syna_rmi4_data->input_dev, keycode, 1);
+			input_sync(syna_rmi4_data->input_dev);
+			input_report_key(syna_rmi4_data->input_dev, keycode, 0);
+			input_sync(syna_rmi4_data->input_dev);
+		}
+		else
+		{
+			// press powerkey
+			schedule_work(&boeffla_syn_presspwr_work);
+		}
 	}
 
 	if(gesturemode != UnkownGestrue) {
