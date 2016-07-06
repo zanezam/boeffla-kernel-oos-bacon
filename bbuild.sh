@@ -11,7 +11,7 @@
 #######################################
 
 BOEFFLA_VERSION="3.0-beta1-OOS12-bacon"
-EXTENDED_CMDLINE="androidboot.selinux=permissive"
+EXTENDED_CMDLINE=""
 
 TOOLCHAIN="/opt/toolchains/arm-eabi-4.8/bin/arm-eabi-"
 
