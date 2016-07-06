@@ -23,17 +23,6 @@ index 64c7fc8..310690e 100755
  
      # Tweak background writeout
      write /proc/sys/vm/dirty_expire_centisecs 200
-@@ -681,3 +681,10 @@ on property:ro.prj_name=14001
- on property:ro.prj_name=15055
-      setprop persist.radio.multisim.config dsds
- #endif
-+
-+# Call Boeffla-Kernel init script
-+service boeffla-init /sbin/boeffla-init.sh
-+    class main
-+    user root
-+    group root
-+    oneshot
 -- 
 1.9.1
 
