@@ -13,7 +13,7 @@
 # ********************************
 
 # kernel specification (hardware; type; target; url)
-KERNEL_SPECS="bacon;oos;oos2xx;http://boeffla.df-kunde.de/bacon/boeffla-kernel-oos/"
+KERNEL_SPECS="bacon;oos;oos2xx;http://kernel.boeffla.de/bacon/boeffla-kernel-oos/"
 
 # kernel features 
 # (1=enable-busybox,2=enable-frandom,3=wipe-cache,4=disable-zram-control)
