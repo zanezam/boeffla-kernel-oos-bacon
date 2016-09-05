@@ -13,6 +13,7 @@
 BOEFFLA_VERSION="3.0-test-OOS12-bacon"
 
 TOOLCHAIN="/opt/toolchains/arm-eabi-4.8/bin/arm-eabi-"
+ARCHITECTURE=arm
 
 COMPILE_DTB="y"
 MODULES_IN_SYSTEM="y"
@@ -71,6 +72,10 @@ if [ -f ~/x-settings.sh ]; then
 fi
 
 BOEFFLA_FILENAME="boeffla-kernel-$BOEFFLA_VERSION"
+
+# set environment
+export ARCH=$ARCHITECTURE
+export CROSS_COMPILE="${CCACHE} $TOOLCHAIN"
 
 
 #####################
